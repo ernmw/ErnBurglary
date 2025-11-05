@@ -171,6 +171,7 @@ return {
     interfaceName = settings.MOD_NAME,
     interface = {
         version = 1,
+        spotted = spotted,
         setItemsAllowed = setItemsAllowed,
         onSpottedChangeCallback = onSpottedChangeCallback,
         onStolenCallback = onStolenCallback,
