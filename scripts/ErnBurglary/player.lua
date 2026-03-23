@@ -324,7 +324,7 @@ local function onInfrequentUpdate(dt)
         return
     end
 
-    if settings.disableDetection() ~= true then
+    if settings.main.disableDetection ~= true then
         detectionCheck(dt)
     end
 
