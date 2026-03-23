@@ -21,7 +21,8 @@ local settings = require("scripts.ErnBurglary.settings")
 local self = require("openmw.self")
 local core = require("openmw.core")
 local infrequent = require("scripts.ErnBurglary.infrequent")
-local localization = core.l10n(settings.MOD_NAME)
+local MOD_NAME = require("scripts.ErnBurglary.ns")
+local localization = core.l10n(MOD_NAME)
 local async = require("openmw.async")
 local ui = require('openmw.ui')
 local util = require('openmw.util')
@@ -199,9 +200,9 @@ end
 
 return {
     eventHandlers = {
-        [settings.MOD_NAME .. "alertsOnSpottedChange"] = alertsOnSpottedChange,
-        [settings.MOD_NAME .. "showWantedMessage"] = showWantedMessage,
-        [settings.MOD_NAME .. "showExpelledMessage"] = showExpelledMessage,
+        [MOD_NAME .. "alertsOnSpottedChange"] = alertsOnSpottedChange,
+        [MOD_NAME .. "showWantedMessage"] = showWantedMessage,
+        [MOD_NAME .. "showExpelledMessage"] = showExpelledMessage,
     },
     engineHandlers = {
         onFrame = onFrame,

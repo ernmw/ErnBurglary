@@ -183,18 +183,18 @@ local lookupFuncTable = {
 
 local mainContainer = {
     groupKey = mainGroupKey,
-    section = storage.playerSection(mainGroupKey)
+    section = storage.globalSection(mainGroupKey)
 }
 setmetatable(mainContainer, lookupFuncTable)
 
 local uiContainer = {
     groupKey = uiGroupKey,
-    section = storage.playerSection(uiGroupKey)
+    section = storage.globalSection(uiGroupKey)
 }
 setmetatable(uiContainer, lookupFuncTable)
 
 local function debugPrint(str, ...)
-    if mainContainer.debugMode then
+    if mainContainer and mainContainer.debugMode or false then
         local arg = { ... }
         if arg ~= nil then
             print(string.format("DEBUG: " .. str, unpack(arg)))

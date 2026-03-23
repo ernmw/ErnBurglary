@@ -14,14 +14,15 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-]] local interfaces = require("openmw.interfaces")
+]]
+local interfaces = require("openmw.interfaces")
 local world = require('openmw.world')
-local settings = require("scripts.ErnBurglary.settings")
+local MOD_NAME = require("scripts.ErnBurglary.ns")
 
 local function onSpottedChange(data)
     for _, player in ipairs(world.players) do
         if data.player.id == player.id then
-            player:sendEvent(settings.MOD_NAME .. "alertsOnSpottedChange", data)
+            player:sendEvent(MOD_NAME .. "alertsOnSpottedChange", data)
         end
     end
 end

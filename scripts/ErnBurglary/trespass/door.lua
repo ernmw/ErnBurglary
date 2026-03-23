@@ -17,12 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 local settings = require("scripts.ErnBurglary.settings")
 local pself    = require("openmw.self")
+local MOD_NAME = require("scripts.ErnBurglary.ns")
 local types    = require("openmw.types")
 local core     = require("openmw.core")
 
 local function onActive()
     if types.Lockable.isLocked(pself) then
-        core.sendGlobalEvent(settings.MOD_NAME .. "onDoorLocked", {
+        core.sendGlobalEvent(MOD_NAME .. "onDoorLocked", {
             door = pself
         })
     end

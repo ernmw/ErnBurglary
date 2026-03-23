@@ -15,6 +15,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
+local MOD_NAME = require("scripts.ErnBurglary.ns")
 local settings = require("scripts.ErnBurglary.settings")
 local common = require("scripts.ErnBurglary.common")
 local infrequent = require("scripts.ErnBurglary.infrequent")
@@ -28,13 +29,6 @@ local storage = require('openmw.storage')
 
 if require("openmw.core").API_REVISION < 62 then
     error("OpenMW 0.49 or newer is required!")
-end
-
--- Init settings first to init storage which is used everywhere.
-settings.initSettings()
-
-local function onNewGame()
-    settings.onNewGame()
 end
 
 local persistedState = {}
@@ -229,7 +223,7 @@ local function onActivate(object, actor)
         end
     elseif types.NPC.objectIsInstance(object) then
         settings.debugPrint("activated " .. object.recordId)
-        actor:sendEvent(settings.MOD_NAME .. "onNPCActivated", {
+        actor:sendEvent(MOD_NAME .. "onNPCActivated", {
             npc = object
         })
     end
@@ -408,7 +402,7 @@ local function handleTheftFromFaction(player, faction, value)
         for _, playerFaction in ipairs(types.NPC.getFactions(player)) do
             if playerFaction == faction then
                 types.NPC.expel(player, playerFaction)
-                player:sendEvent(settings.MOD_NAME .. "showExpelledMessage", {
+                player:sendEvent(MOD_NAME .. "showExpelledMessage", {
                     faction = faction
                 })
                 expelled = true
@@ -634,7 +628,7 @@ local function resolvePendingTheft(data)
         increaseBounty(data.player, totalBounty)
     elseif totalTheftValue > 0 then
         -- tell player they were caught (when bounty did not increase).
-        data.player:sendEvent(settings.MOD_NAME .. "showWantedMessage", {
+        data.player:sendEvent(MOD_NAME .. "showWantedMessage", {
             value = totalTheftValue
         })
     end
@@ -827,7 +821,7 @@ local function onPaidBounty(data)
     saveCellState(cellState)
 end
 
-local resendSpottedStatusCallback = async:registerTimerCallback(settings.MOD_NAME .. "_resendSpottedStatusCallback",
+local resendSpottedStatusCallback = async:registerTimerCallback(MOD_NAME .. "_resendSpottedStatusCallback",
     function(data)
         for _, player in ipairs(world.players) do
             local cellState = getCellState(player.cell.id, player.id)
@@ -862,11 +856,11 @@ end
 
 return {
     eventHandlers = {
-        [settings.MOD_NAME .. "onSpotted"] = onSpotted,
-        [settings.MOD_NAME .. "onCellChange"] = onCellChange,
-        [settings.MOD_NAME .. "onNewItem"] = onNewItems,
-        [settings.MOD_NAME .. "onPaidBounty"] = onPaidBounty,
-        [settings.MOD_NAME .. "onBountyIncreased"] = onBountyIncreased
+        [MOD_NAME .. "onSpotted"] = onSpotted,
+        [MOD_NAME .. "onCellChange"] = onCellChange,
+        [MOD_NAME .. "onNewItem"] = onNewItems,
+        [MOD_NAME .. "onPaidBounty"] = onPaidBounty,
+        [MOD_NAME .. "onBountyIncreased"] = onBountyIncreased
     },
     engineHandlers = {
         onSave = saveState,
