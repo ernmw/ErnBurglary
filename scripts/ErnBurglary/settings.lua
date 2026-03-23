@@ -194,7 +194,7 @@ local uiContainer = {
 setmetatable(uiContainer, lookupFuncTable)
 
 local function debugPrint(str, ...)
-    if mainContainer and mainContainer.debugMode or false then
+    if uiContainer and uiContainer.debugMode or false then
         local arg = { ... }
         if arg ~= nil then
             print(string.format("DEBUG: " .. str, unpack(arg)))

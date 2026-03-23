@@ -47,9 +47,8 @@ local spotted = false
 local spottedIcon = nil
 
 local function makeIcon(path)
-    local iconSettings = settings.icon()
-    settings.debugPrint("icon settings: " .. aux_util.deepToString(iconSettings, 3))
-    local size = iconSettings["iconSize"]
+    --settings.debugPrint("icon settings: " .. aux_util.deepToString(iconSettings, 3))
+    local size = settings.ui.iconSize
     -- (0,0) is top left of screen.
 
     -- default anchor is top-left. 1,0 is top right.
@@ -59,7 +58,7 @@ local function makeIcon(path)
         type = ui.TYPE.Container,
         template = interfaces.MWUI.templates.boxSolid,
         props = {
-            position = util.vector2(iconSettings["iconOffsetX"] + 202, iconSettings["iconOffsetY"] - 18),
+            position = util.vector2(settings.ui.iconOffsetX + 202, settings.ui.iconOffsetY - 18),
             relativePosition = util.vector2(0, 1),
             anchor = util.vector2(0, 1),
             visible = false
@@ -85,7 +84,7 @@ local function drawSpottedIcon()
         spottedIcon = makeIcon(iconPath)
     end
     local newVisible = (spotted and interfaces.UI.isHudVisible()) and
-        ((settings.icon()["showIcon"] == "always") or (self.controls.sneak and settings.icon()["showIcon"] ~= "never"))
+        ((settings.ui.showIcon == "always") or (self.controls.sneak and settings.ui.showIcon ~= "never"))
 
     spottedIcon.layout.props.visible = newVisible
     spottedIcon:update()
@@ -107,7 +106,7 @@ local function onSneakChange(sneakStatus)
         changed = true
     end
     sneaking = sneakStatus
-    if (settings.quietMode() ~= true) and changed and sneaking and spotted then
+    if (settings.ui.quietMode ~= true) and changed and sneaking and spotted then
         queueMessage(localization("showWarningMessage", {}))
     end
     if changed then
@@ -126,12 +125,12 @@ local function alertsOnSpottedChange(data)
 
         -- this will execute on every cell change
         settings.debugPrint("showNoWitnessesMessage")
-        if (settings.quietMode() ~= true) and sneaking then
+        if (settings.ui.quietMode ~= true) and sneaking then
             queueMessage(localization("showNoWitnessesMessage", {}))
         end
     else
         spotted = true
-        if (settings.drain()) then
+        if settings.ui.drain then
             types.Actor.activeSpells(self):add({
                 id = "ernburglary_spotted",
                 effects = { 0 },
@@ -144,7 +143,7 @@ local function alertsOnSpottedChange(data)
         -- npc might not be real npc object.
         if (type(data.npc) ~= "table") and types.NPC.objectIsInstance(data.npc) then
             local npcRecord = types.NPC.record(data.npc)
-            if (settings.quietMode() ~= true) and sneaking then
+            if (settings.ui.quietMode ~= true) and sneaking then
                 queueMessage(localization("showSpottedMessage", {
                     actorName = npcRecord.name
                 }))
