@@ -44,61 +44,100 @@ end
 local sneaking = false
 local spotted = false
 
-local spottedIcon = nil
-
-local function makeIcon(path)
+local function makeIconLayout()
     --settings.debugPrint("icon settings: " .. aux_util.deepToString(iconSettings, 3))
-    local size = settings.ui.iconSize
+    local sizeVec = util.vector2(settings.ui.iconSize, settings.ui.iconSize)
     -- (0,0) is top left of screen.
+    --
 
     -- default anchor is top-left. 1,0 is top right.
-    local box = ui.create {
+    return {
         name = 'spotted',
-        layer = 'HUD',
+        layer = settings.ui.lock and 'Scene' or 'Modal',
         type = ui.TYPE.Container,
         template = interfaces.MWUI.templates.boxSolid,
         props = {
-            position = util.vector2(settings.ui.iconOffsetX + 202, settings.ui.iconOffsetY - 18),
-            relativePosition = util.vector2(0, 1),
-            anchor = util.vector2(0, 1),
+            --position = util.vector2(settings.ui.iconOffsetX + 202, settings.ui.iconOffsetY - 18),
+            --relativePosition = util.vector2(0.3, 0.9),
+            relativePosition = util.vector2(settings.ui.iconOffsetX, settings.ui.iconOffsetY),
+            anchor = util.vector2(0.5, 0.5),
             visible = false
         },
         content = ui.content { {
             type = ui.TYPE.Image,
             props = {
                 resource = ui.texture {
-                    path = path
+                    path = "icons\\ernburglary\\b_tx_spotted.dds"
                 },
-                size = util.vector2(size, size)
+                size = sizeVec
             },
-            size = util.vector2(size, size)
+            size = sizeVec
         } }
     }
-    return box
 end
 
+local spottedIcon = ui.create { makeIconLayout() }
+
+
+local screenSize = ui.screenSize()
+spottedIcon.layout.events = {
+    mousePress = async:callback(function(data, elem)
+        if data.button == 1 then -- Left mouse button
+            if settings.main.lock then
+                return
+            end
+            print("left click start head")
+            if not elem.userData then
+                elem.userData = {}
+            end
+            elem.userData.isDragging = true
+            elem.userData.dragStartPosition = data.position
+            elem.userData.windowStartPosition = spottedIcon.layout.props.relativePosition or util.vector2(0, 0)
+        end
+        spottedIcon:update()
+    end),
+
+    mouseRelease = async:callback(function(data, elem)
+        print("left click release head")
+        if elem.userData then
+            elem.userData.isDragging = false
+        end
+        spottedIcon:update()
+    end),
+
+    mouseMove = async:callback(function(data, elem)
+        if elem.userData and elem.userData.isDragging then
+            -- Calculate new position based on mouse movement
+            local deltaX = data.position.x - elem.userData.dragStartPosition.x
+            local deltaY = data.position.y - elem.userData.dragStartPosition.y
+            local newPosition = util.vector2(
+                elem.userData.windowStartPosition.x + deltaX / screenSize.x,
+                elem.userData.windowStartPosition.y + deltaY / screenSize.y
+            )
+            settings.main.section:set("positionX", newPosition.x)
+            settings.main.section:set("positionY", newPosition.y)
+            print("x: " .. tostring(newPosition.x) .. ", y: " .. tostring(newPosition.y))
+            --rootElement.layout.props.relativePosition = newPosition
+            spottedIcon:update()
+        end
+    end),
+}
+
 local function drawSpottedIcon()
-    if spottedIcon == nil then
-        local iconPath = "icons\\ernburglary\\b_tx_spotted.dds"
-        settings.debugPrint("iconpath: " .. iconPath)
-        spottedIcon = makeIcon(iconPath)
-    end
     local newVisible = (spotted and interfaces.UI.isHudVisible()) and
         ((settings.ui.showIcon == "always") or (self.controls.sneak and settings.ui.showIcon ~= "never"))
+
+    if not settings.ui.lock then
+        newVisible = true
+    end
 
     spottedIcon.layout.props.visible = newVisible
     spottedIcon:update()
 end
 
-local function resetIcon()
-    if spottedIcon then
-        spottedIcon:destroy()
-        spottedIcon = nil
-    end
+settings.ui.subscribe(async:callback(function(_, key)
     drawSpottedIcon()
-end
-
-settings.onUISettingsChange(resetIcon)
+end))
 
 local function onSneakChange(sneakStatus)
     local changed = false

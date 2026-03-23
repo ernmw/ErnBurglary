@@ -113,6 +113,12 @@ local function init()
             default = true,
             renderer = "checkbox"
         }, {
+            key = "lockIcon",
+            name = "lockIcon_name",
+            description = "lockIcon_description",
+            default = true,
+            renderer = "checkbox"
+        }, {
             key = "showIcon",
             name = "showIcon_name",
             description = "showIcon_description",
