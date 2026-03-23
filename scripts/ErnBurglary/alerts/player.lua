@@ -46,22 +46,27 @@ local spotted = false
 
 local function makeIconLayout()
     --settings.debugPrint("icon settings: " .. aux_util.deepToString(iconSettings, 3))
-    local sizeVec = util.vector2(settings.ui.iconSize, settings.ui.iconSize)
+    local sizeVec = util.vector2(settings.ui().iconSize, settings.ui().iconSize)
     -- (0,0) is top left of screen.
-    --
+    local newVisible = (spotted and interfaces.UI.isHudVisible()) and
+        ((settings.ui().showIcon == "always") or (self.controls.sneak and settings.ui().showIcon ~= "never"))
+
+    if not settings.ui().lockIcon then
+        newVisible = true
+    end
 
     -- default anchor is top-left. 1,0 is top right.
     return {
         name = 'spotted',
-        layer = settings.ui.lock and 'Scene' or 'Modal',
+        layer = settings.ui().lockIcon and 'Scene' or 'Modal',
         type = ui.TYPE.Container,
         template = interfaces.MWUI.templates.boxSolid,
         props = {
             --position = util.vector2(settings.ui.iconOffsetX + 202, settings.ui.iconOffsetY - 18),
             --relativePosition = util.vector2(0.3, 0.9),
-            relativePosition = util.vector2(settings.ui.iconOffsetX, settings.ui.iconOffsetY),
+            relativePosition = util.vector2(settings.ui().iconOffsetX, settings.ui().iconOffsetY),
             anchor = util.vector2(0.5, 0.5),
-            visible = false
+            visible = newVisible
         },
         content = ui.content { {
             type = ui.TYPE.Image,
@@ -76,14 +81,18 @@ local function makeIconLayout()
     }
 end
 
-local spottedIcon = ui.create { makeIconLayout() }
+local spottedIcon = ui.create(makeIconLayout())
 
+if not spottedIcon then
+    error("failed to make spotted icon")
+    return
+end
 
 local screenSize = ui.screenSize()
-spottedIcon.layout.events = {
+local iconEvents = {
     mousePress = async:callback(function(data, elem)
         if data.button == 1 then -- Left mouse button
-            if settings.main.lock then
+            if settings.ui().lockIcon then
                 return
             end
             print("left click start head")
@@ -114,28 +123,24 @@ spottedIcon.layout.events = {
                 elem.userData.windowStartPosition.x + deltaX / screenSize.x,
                 elem.userData.windowStartPosition.y + deltaY / screenSize.y
             )
-            settings.main.section:set("positionX", newPosition.x)
-            settings.main.section:set("positionY", newPosition.y)
+            settings.ui().section:set("iconOffsetX", newPosition.x)
+            settings.ui().section:set("iconOffsetY", newPosition.y)
             print("x: " .. tostring(newPosition.x) .. ", y: " .. tostring(newPosition.y))
-            --rootElement.layout.props.relativePosition = newPosition
+            spottedIcon.layout.props.relativePosition = newPosition
             spottedIcon:update()
         end
     end),
 }
+spottedIcon.layout.events = iconEvents
 
 local function drawSpottedIcon()
-    local newVisible = (spotted and interfaces.UI.isHudVisible()) and
-        ((settings.ui.showIcon == "always") or (self.controls.sneak and settings.ui.showIcon ~= "never"))
-
-    if not settings.ui.lock then
-        newVisible = true
-    end
-
-    spottedIcon.layout.props.visible = newVisible
+    --local userData = spottedIcon.userData
+    spottedIcon.layout = makeIconLayout()
+    spottedIcon.layout.events = iconEvents
     spottedIcon:update()
 end
 
-settings.ui.subscribe(async:callback(function(_, key)
+settings.ui().subscribe(async:callback(function(_, key)
     drawSpottedIcon()
 end))
 
@@ -145,7 +150,7 @@ local function onSneakChange(sneakStatus)
         changed = true
     end
     sneaking = sneakStatus
-    if (settings.ui.quietMode ~= true) and changed and sneaking and spotted then
+    if (settings.ui().quietMode ~= true) and changed and sneaking and spotted then
         queueMessage(localization("showWarningMessage", {}))
     end
     if changed then
@@ -164,12 +169,12 @@ local function alertsOnSpottedChange(data)
 
         -- this will execute on every cell change
         settings.debugPrint("showNoWitnessesMessage")
-        if (settings.ui.quietMode ~= true) and sneaking then
+        if (settings.ui().quietMode ~= true) and sneaking then
             queueMessage(localization("showNoWitnessesMessage", {}))
         end
     else
         spotted = true
-        if settings.ui.drain then
+        if settings.ui().drain then
             types.Actor.activeSpells(self):add({
                 id = "ernburglary_spotted",
                 effects = { 0 },
@@ -182,7 +187,7 @@ local function alertsOnSpottedChange(data)
         -- npc might not be real npc object.
         if (type(data.npc) ~= "table") and types.NPC.objectIsInstance(data.npc) then
             local npcRecord = types.NPC.record(data.npc)
-            if (settings.ui.quietMode ~= true) and sneaking then
+            if (settings.ui().quietMode ~= true) and sneaking then
                 queueMessage(localization("showSpottedMessage", {
                     actorName = npcRecord.name
                 }))

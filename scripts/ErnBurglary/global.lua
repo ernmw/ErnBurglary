@@ -31,6 +31,8 @@ if require("openmw.core").API_REVISION < 62 then
     error("OpenMW 0.49 or newer is required!")
 end
 
+settings.initGlobal()
+
 local persistedState = {}
 
 local function thieveryKey(cellID, playerID)
@@ -238,13 +240,17 @@ end
 -- npc
 -- override
 local function onSpotted(data)
-    settings.debugPrint("onSpotted(" .. aux_util.deepToString(data) .. ")")
     local cellState = getCellState(data.cellID, data.player.id)
+
+    if not cellState.spottedByActorId[data.npc.id] then
+        settings.debugPrint("onSpotted(" .. aux_util.deepToString(data) .. ")")
+    end
+
     cellState.spottedByActorId[data.npc.id] = true
     saveCellState(cellState)
     interfaces.ErnBurglary.__onSpotted(data.player, data.npc, data.cellID)
     if data.override then
-        settings.main.section:set("disableDetection", true)
+        settings.main().section:set("disableDetection", true)
     end
 end
 
@@ -339,7 +345,7 @@ local function increaseBounty(player, amount)
 end
 
 local function revertBounty(player, cellState)
-    if settings.main.revertBounties ~= true then
+    if settings.main().revertBounties ~= true then
         return
     end
 
@@ -358,7 +364,7 @@ end
 -- returns bounty to apply
 local function handleTheftSeenByGuard(player, value)
     settings.debugPrint("handleTheftSeenByGuard(player, " .. value .. ")")
-    local bounty = value * settings.main.bountyScale
+    local bounty = value * settings.main().bountyScale
     print("Theft seen by guard increased bounty by " .. bounty .. ".")
     return bounty
 end
@@ -372,7 +378,7 @@ local function handleTheftFromNPC(player, npc, value)
     local dispoPenalty = math.min(startDisposition, value)
     types.NPC.modifyBaseDisposition(npc, player, -1 * dispoPenalty)
 
-    local bounty = (value - dispoPenalty) * settings.main.bountyScale
+    local bounty = (value - dispoPenalty) * settings.main().bountyScale
 
     print("Theft from " .. npc.recordId .. " dropped disposition by " .. dispoPenalty .. " from " .. startDisposition ..
         ", and increased bounty by " .. bounty .. ".")
@@ -383,9 +389,9 @@ end
 local function handleTheftFromFaction(player, faction, value)
     settings.debugPrint("handleTheftFromFaction(player, " .. faction .. ", " .. value .. ")")
 
-    if settings.main.lenientFactions then
+    if settings.main().lenientFactions then
         print("Theft from " .. faction .. " (lenient).")
-        return value * settings.main.bountyScale
+        return value * settings.main().bountyScale
     end
 
     local startReputation = types.NPC.getFactionReputation(player, faction)
@@ -395,7 +401,7 @@ local function handleTheftFromFaction(player, faction, value)
     local reputationPenalty = math.min(startReputation, value)
     types.NPC.modifyFactionReputation(player, faction, -1 * reputationPenalty)
 
-    local bounty = (value - reputationPenalty) * settings.main.bountyScale
+    local bounty = (value - reputationPenalty) * settings.main().bountyScale
 
     local expelled = false
     if bounty > 0 then

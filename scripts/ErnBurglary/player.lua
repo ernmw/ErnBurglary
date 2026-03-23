@@ -28,8 +28,6 @@ local localization = core.l10n(MOD_NAME)
 local ui = require('openmw.ui')
 local aux_util = require('openmw_aux.util')
 
-settings.registerPage()
-
 local blockedCells = {
     ["seyda neen, census and excise office"] = true
 }
@@ -150,7 +148,7 @@ local function sendSpottedEvent(npc)
         settings.debugPrint("Blocked cell")
         return
     end
-    settings.debugPrint("sending spotted by event for " .. npc.recordId)
+    --settings.debugPrint("sending spotted by event for " .. npc.recordId)
 
     core.sendGlobalEvent(MOD_NAME .. "onSpotted", {
         player = self,
@@ -324,7 +322,7 @@ local function onInfrequentUpdate(dt)
         return
     end
 
-    if settings.main.disableDetection ~= true then
+    if settings.main().disableDetection ~= true then
         detectionCheck(dt)
     end
 

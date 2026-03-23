@@ -24,21 +24,14 @@ local uiGroupKey = "SettingsUI" .. MOD_NAME
 
 local iconOptions = { "sneaking", "never", "always" }
 
-local function init()
-    interfaces.Settings.registerPage {
-        key = MOD_NAME,
-        l10n = MOD_NAME,
-        name = "name",
-        description = "description"
-    }
-
+local function initGlobal()
     interfaces.Settings.registerGroup {
         key = mainGroupKey,
         l10n = MOD_NAME,
         name = "modSettingsGameplayTitle",
         description = "modSettingsGameplayDesc",
         page = MOD_NAME,
-        permanentStorage = false,
+        permanentStorage = true,
         settings = { {
             key = "bountyScale",
             name = "bountyScale_name",
@@ -90,16 +83,30 @@ local function init()
             description = "disableDetection_description",
             default = false,
             renderer = "checkbox"
+        }, {
+            key = "debugMode",
+            name = "debugMode_name",
+            description = "debugMode_description",
+            default = false,
+            renderer = "checkbox"
         } }
     }
+end
 
+local function initPlayer()
+    interfaces.Settings.registerPage {
+        key = MOD_NAME,
+        l10n = MOD_NAME,
+        name = "name",
+        description = "description"
+    }
     interfaces.Settings.registerGroup {
         key = uiGroupKey,
         l10n = MOD_NAME,
         name = "modSettingsUITitle",
         description = "modSettingsUIDesc",
         page = MOD_NAME,
-        permanentStorage = false,
+        permanentStorage = true,
         settings = { {
             key = "drain",
             name = "drain_name",
@@ -128,22 +135,22 @@ local function init()
         }, {
             key = "iconOffsetX",
             name = "iconOffsetX_name",
-            default = 0,
+            default = 0.2,
             renderer = "number",
             argument = {
-                integer = true,
-                min = -50000,
-                max = 50000
+                integer = false,
+                min = 0,
+                max = 1
             }
         }, {
             key = "iconOffsetY",
             name = "iconOffsetY_name",
-            default = 0,
+            default = 0.9,
             renderer = "number",
             argument = {
-                integer = true,
-                min = -50000,
-                max = 50000
+                integer = false,
+                min = 0,
+                max = 1
             }
         }, {
             key = "iconSize",
@@ -155,12 +162,6 @@ local function init()
                 min = 8,
                 max = 256
             }
-        }, {
-            key = "debugMode",
-            name = "debugMode_name",
-            description = "debugMode_description",
-            default = false,
-            renderer = "checkbox"
         } }
     }
 end
@@ -187,20 +188,35 @@ local lookupFuncTable = {
     end,
 }
 
-local mainContainer = {
-    groupKey = mainGroupKey,
-    section = storage.globalSection(mainGroupKey)
-}
-setmetatable(mainContainer, lookupFuncTable)
+local mainContainer = nil
 
-local uiContainer = {
-    groupKey = uiGroupKey,
-    section = storage.globalSection(uiGroupKey)
-}
-setmetatable(uiContainer, lookupFuncTable)
+local function mainContainerCtor()
+    if mainContainer then
+        return mainContainer
+    end
+    mainContainer = {
+        groupKey = mainGroupKey,
+        section = storage.globalSection(mainGroupKey)
+    }
+    setmetatable(mainContainer, lookupFuncTable)
+    return mainContainer
+end
+
+local uiContainer = nil
+local function uiContainerCtor()
+    if uiContainer then
+        return uiContainer
+    end
+    uiContainer = {
+        groupKey = uiGroupKey,
+        section = storage.playerSection(uiGroupKey)
+    }
+    setmetatable(uiContainer, lookupFuncTable)
+    return uiContainer
+end
 
 local function debugPrint(str, ...)
-    if uiContainer and uiContainer.debugMode or false then
+    if mainContainerCtor().debugMode then
         local arg = { ... }
         if arg ~= nil then
             print(string.format("DEBUG: " .. str, unpack(arg)))
@@ -213,13 +229,15 @@ end
 ---@alias SettingContainer table
 
 ---@class Settings
----@field init fun()
----@field main SettingContainer
+---@field initGlobal fun()
+---@field main fun(): SettingContainer
+---@field ui fun(): SettingContainer
 
 ---@type Settings
 return {
-    init = init,
-    main = mainContainer,
-    ui = uiContainer,
+    initGlobal = initGlobal,
+    initPlayer = initPlayer,
+    main = mainContainerCtor,
+    ui = uiContainerCtor,
     debugPrint = debugPrint,
 }

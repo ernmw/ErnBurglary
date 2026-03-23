@@ -26,7 +26,7 @@ local pself        = require("openmw.self")
 
 local function showTrespassingMessage(data)
     settings.debugPrint("showTrespassingMessage")
-    if settings.ui.quietMode ~= true then
+    if settings.ui().quietMode ~= true then
         ui.showMessage(localization("showTrespassingMessage", data))
     end
 end

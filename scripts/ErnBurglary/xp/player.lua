@@ -29,7 +29,7 @@ local function xpOnStolenCallback(data)
         sneakTerm = 10
         maxVal = 1
     end
-    local scaled = math.min(maxVal, settings.main.sneakXPScale * (math.log(data / sneakTerm)))
+    local scaled = math.min(maxVal, settings.main().sneakXPScale * (math.log(data / sneakTerm)))
 
     if scaled > 0 then
         interfaces.SkillProgression.skillUsed(core.stats.Skill.records.sneak.id,

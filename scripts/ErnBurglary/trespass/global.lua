@@ -187,7 +187,7 @@ local function onSpottedChange(data)
     end
     settings.debugPrint("Player was spotted trespassing in " .. trespassCellID .. ".")
 
-    local fine = settings.main.trespassFine
+    local fine = settings.main().trespassFine
     if fine > 0 then
         local currentCrime = types.Player.getCrimeLevel(data.player)
         types.Player.setCrimeLevel(data.player, currentCrime + fine)
