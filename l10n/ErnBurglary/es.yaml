@@ -37,8 +37,8 @@ sneaking: "sigilo"
 never: "nunca   "
 always: "siempre "
 
-iconOffsetY_name: "Desplazamiento Vertical del Ícono"
-iconOffsetX_name: "Desplazamiento Horizontal del Ícono"
+iconY_name: "Desplazamiento Vertical del Ícono"
+iconX_name: "Desplazamiento Horizontal del Ícono"
 iconSize_name: "Tamaño de Imagen del Ícono"
 
 debugMode_name: "Modo Depuración"

@@ -44,29 +44,42 @@ end
 local sneaking = false
 local spotted = false
 
-local function makeIconLayout()
-    --settings.debugPrint("icon settings: " .. aux_util.deepToString(iconSettings, 3))
-    local sizeVec = util.vector2(settings.ui().iconSize, settings.ui().iconSize)
-    -- (0,0) is top left of screen.
+local function isVisible()
     local newVisible = (spotted and interfaces.UI.isHudVisible()) and
         ((settings.ui().showIcon == "always") or (self.controls.sneak and settings.ui().showIcon ~= "never"))
 
     if not settings.ui().lockIcon then
         newVisible = true
     end
+    return newVisible
+end
 
+local function position()
+    return util.vector2(settings.ui().iconX, settings.ui().iconY)
+end
+
+local function layer()
+    return settings.ui().lockIcon and 'Scene' or 'Modal'
+end
+
+local function size()
+    return util.vector2(settings.ui().iconSize, settings.ui().iconSize)
+end
+
+local function makeIconLayout()
+    -- (0,0) is top left of screen.
     -- default anchor is top-left. 1,0 is top right.
     return {
         name = 'spotted',
-        layer = settings.ui().lockIcon and 'Scene' or 'Modal',
+        layer = layer(),
         type = ui.TYPE.Container,
         template = interfaces.MWUI.templates.boxSolid,
         props = {
-            --position = util.vector2(settings.ui.iconOffsetX + 202, settings.ui.iconOffsetY - 18),
+            --position = util.vector2(settings.ui.iconX + 202, settings.ui.iconY - 18),
             --relativePosition = util.vector2(0.3, 0.9),
-            relativePosition = util.vector2(settings.ui().iconOffsetX, settings.ui().iconOffsetY),
+            relativePosition = position(),
             anchor = util.vector2(0.5, 0.5),
-            visible = newVisible
+            visible = isVisible()
         },
         content = ui.content { {
             type = ui.TYPE.Image,
@@ -74,9 +87,9 @@ local function makeIconLayout()
                 resource = ui.texture {
                     path = "icons\\ernburglary\\b_tx_spotted.dds"
                 },
-                size = sizeVec
+                size = size()
             },
-            size = sizeVec
+            size = size()
         } }
     }
 end
@@ -88,14 +101,24 @@ if not spottedIcon then
     return
 end
 
+local iconEvents = nil
+
+local function updateSpottedIcon()
+    spottedIcon.layout.props.relativePosition = position()
+    spottedIcon.layout.props.visible = isVisible()
+    spottedIcon.layout.props.size = size()
+    spottedIcon.layout.layer = layer()
+    spottedIcon:update()
+end
+
 local screenSize = ui.screenSize()
-local iconEvents = {
+iconEvents = {
     mousePress = async:callback(function(data, elem)
         if data.button == 1 then -- Left mouse button
             if settings.ui().lockIcon then
                 return
             end
-            print("left click start head")
+            settings.debugPrint("left click start spotted icon")
             if not elem.userData then
                 elem.userData = {}
             end
@@ -107,11 +130,13 @@ local iconEvents = {
     end),
 
     mouseRelease = async:callback(function(data, elem)
-        print("left click release head")
+        settings.debugPrint("left click spotted icon")
         if elem.userData then
             elem.userData.isDragging = false
+            --settings.ui().section:set("iconX", elem.userData.newPosition.x)
+            --settings.ui().section:set("iconY", elem.userData.newPosition.y)
+            --drawSpottedIcon()
         end
-        spottedIcon:update()
     end),
 
     mouseMove = async:callback(function(data, elem)
@@ -123,25 +148,19 @@ local iconEvents = {
                 elem.userData.windowStartPosition.x + deltaX / screenSize.x,
                 elem.userData.windowStartPosition.y + deltaY / screenSize.y
             )
-            settings.ui().section:set("iconOffsetX", newPosition.x)
-            settings.ui().section:set("iconOffsetY", newPosition.y)
-            print("x: " .. tostring(newPosition.x) .. ", y: " .. tostring(newPosition.y))
-            spottedIcon.layout.props.relativePosition = newPosition
-            spottedIcon:update()
+            --elem.userData.newPosition = newPosition
+            settings.ui().section:set("iconX", newPosition.x)
+            settings.ui().section:set("iconY", newPosition.y)
+            settings.debugPrint("x: " .. tostring(newPosition.x) .. ", y: " .. tostring(newPosition.y))
+            --spottedIcon.layout.props.relativePosition = newPosition
+            --spottedIcon:update()
         end
     end),
 }
 spottedIcon.layout.events = iconEvents
 
-local function drawSpottedIcon()
-    --local userData = spottedIcon.userData
-    spottedIcon.layout = makeIconLayout()
-    spottedIcon.layout.events = iconEvents
-    spottedIcon:update()
-end
-
 settings.ui().subscribe(async:callback(function(_, key)
-    drawSpottedIcon()
+    updateSpottedIcon()
 end))
 
 local function onSneakChange(sneakStatus)
@@ -154,7 +173,7 @@ local function onSneakChange(sneakStatus)
         queueMessage(localization("showWarningMessage", {}))
     end
     if changed then
-        drawSpottedIcon()
+        updateSpottedIcon()
     end
 end
 
@@ -214,7 +233,7 @@ end
 local function update(dt)
     onSneakChange(self.controls.sneak)
 
-    drawSpottedIcon()
+    updateSpottedIcon()
 
     if pendingMessage == nil then
         return

@@ -43,8 +43,8 @@ sneaking: "sneaking"
 never: "never   "
 always: "always  "
 
-iconOffsetY_name: "Icon Vertical Offset"
-iconOffsetX_name: "Icon Horizontal Offset"
+iconY_name: "Icon Vertical Offset"
+iconX_name: "Icon Horizontal Offset"
 iconSize_name: "Icon Image Size"
 
 debugMode_name: "Debug Mode"

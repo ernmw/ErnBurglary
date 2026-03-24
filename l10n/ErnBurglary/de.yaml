@@ -37,8 +37,8 @@ sneaking: "schleichend"
 never: "nie     "
 always: "immer   "
 
-iconOffsetY_name: "Vertikaler Symbolversatz"
-iconOffsetX_name: "Horizontaler Symbolversatz"
+iconY_name: "Vertikaler Symbolversatz"
+iconX_name: "Horizontaler Symbolversatz"
 iconSize_name: "Symbolbildgröße"
 
 debugMode_name: "Debug-Modus"

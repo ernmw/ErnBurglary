@@ -133,9 +133,9 @@ local function initPlayer()
             default = iconOptions[1],
             renderer = "select",
         }, {
-            key = "iconOffsetX",
-            name = "iconOffsetX_name",
-            default = 0.2,
+            key = "iconX",
+            name = "iconX_name",
+            default = 0.223,
             renderer = "number",
             argument = {
                 integer = false,
@@ -143,9 +143,9 @@ local function initPlayer()
                 max = 1
             }
         }, {
-            key = "iconOffsetY",
-            name = "iconOffsetY_name",
-            default = 0.9,
+            key = "iconY",
+            name = "iconY_name",
+            default = 0.954,
             renderer = "number",
             argument = {
                 integer = false,
