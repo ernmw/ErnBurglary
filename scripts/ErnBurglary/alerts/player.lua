@@ -86,8 +86,7 @@ local function makeIconLayout()
                     path = "icons\\ernburglary\\b_tx_spotted.dds"
                 },
                 size = size()
-            },
-            size = size()
+            }
         } }
     }
 end
