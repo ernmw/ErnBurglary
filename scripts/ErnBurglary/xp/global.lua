@@ -16,15 +16,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 local interfaces = require("openmw.interfaces")
-local world = require('openmw.world')
-local settings = require("scripts.ErnBurglary.settings")
+local MOD_NAME   = require("scripts.ErnBurglary.ns")
 
 local function onStolenCallback(stolenItemsData)
     for _, data in ipairs(stolenItemsData) do
         if data.caught == false then
             local xp = data.itemRecord.value * data.count
             if xp > 0 then
-                data.player:sendEvent(settings.MOD_NAME .. "xpOnStolenCallback", xp)
+                data.player:sendEvent(MOD_NAME .. "xpOnStolenCallback", xp)
             end
         end
     end

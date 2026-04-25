@@ -15,7 +15,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
-local settings = require("scripts.ErnBurglary.settings")
+local MOD_NAME = require("scripts.ErnBurglary.ns")
 local core = require("openmw.core")
 local aux_util = require('openmw_aux.util')
 
@@ -67,7 +67,7 @@ local spottedPlayerStatus = {}
 local function onSpottedChangeCallback(callback)
     isFunction(callback)
     table.insert(onSpottedCallbacks, callback)
-    settings.debugPrint("Registered callback #" .. #onSpottedCallbacks .. " for onSpottedChangeCallback().")
+    --settings.debugPrint("Registered callback #" .. #onSpottedCallbacks .. " for onSpottedChangeCallback().")
 end
 
 local function __onSpotted(player, npc, cellID)
@@ -116,7 +116,7 @@ local onStolenCallbacks = {}
 local function onStolenCallback(callback)
     isFunction(callback)
     table.insert(onStolenCallbacks, callback)
-    settings.debugPrint("Registered callback #" .. #onStolenCallbacks .. " for onStolenCallback().")
+    --settings.debugPrint("Registered callback #" .. #onStolenCallbacks .. " for onStolenCallback().")
 end
 
 local function __onStolen(data)
@@ -136,7 +136,7 @@ local onCellChangeCallbacks = {}
 local function onCellChangeCallback(callback)
     isFunction(callback)
     table.insert(onCellChangeCallbacks, callback)
-    settings.debugPrint("Registered callback #" .. #onCellChangeCallbacks .. " for onCellChangeCallbacks().")
+    --settings.debugPrint("Registered callback #" .. #onCellChangeCallbacks .. " for onCellChangeCallbacks().")
 end
 
 local function __onCellChange(data)
@@ -148,7 +148,7 @@ end
 -- spotted will mark the player as Spotted by the NPC.
 -- if `override` is true, then ErnBurglary will turn off its normal detection checks.
 local function spotted(player, npc, override)
-    core.sendGlobalEvent(settings.MOD_NAME .. "onSpotted", {
+    core.sendGlobalEvent(MOD_NAME .. "onSpotted", {
         player = player,
         npc = npc,
         cellID = player.cell.id,
@@ -162,13 +162,13 @@ end
 -- the player's UI mode changes into, or out of, "Dialogue" mode.
 -- This exists to allow for patching with Pause Control.
 local function setItemsAllowed(player, allowed)
-    player:sendEvent(settings.MOD_NAME .. "setItemsAllowed", {
+    player:sendEvent(MOD_NAME .. "setItemsAllowed", {
         allowed = allowed
     })
 end
 
 return {
-    interfaceName = settings.MOD_NAME,
+    interfaceName = MOD_NAME,
     interface = {
         version = 1,
         spotted = spotted,

@@ -1,3 +1,5 @@
+MENU:scripts/ErnBurglary/menu_settings.lua
+
 PLAYER:scripts/ErnBurglary/player.lua
 GLOBAL:scripts/ErnBurglary/interface.lua
 GLOBAL:scripts/ErnBurglary/global.lua

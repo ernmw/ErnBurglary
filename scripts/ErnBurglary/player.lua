@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 local interfaces = require("openmw.interfaces")
+local MOD_NAME = require("scripts.ErnBurglary.ns")
 local settings = require("scripts.ErnBurglary.settings")
 local infrequent = require("scripts.ErnBurglary.infrequent")
 local types = require("openmw.types")
@@ -23,11 +24,9 @@ local nearby = require("openmw.nearby")
 local core = require("openmw.core")
 local self = require("openmw.self")
 local util = require("openmw.util")
-local localization = core.l10n(settings.MOD_NAME)
+local localization = core.l10n(MOD_NAME)
 local ui = require('openmw.ui')
 local aux_util = require('openmw_aux.util')
-
-settings.registerPage()
 
 local blockedCells = {
     ["seyda neen, census and excise office"] = true
@@ -149,9 +148,9 @@ local function sendSpottedEvent(npc)
         settings.debugPrint("Blocked cell")
         return
     end
-    settings.debugPrint("sending spotted by event for " .. npc.recordId)
+    --settings.debugPrint("sending spotted by event for " .. npc.recordId)
 
-    core.sendGlobalEvent(settings.MOD_NAME .. "onSpotted", {
+    core.sendGlobalEvent(MOD_NAME .. "onSpotted", {
         player = self,
         npc = npc,
         cellID = self.cell.id
@@ -212,14 +211,18 @@ end
 
 local function detectionCheck(dt)
     -- find out which NPC is talking
+    local detectionDisabled = settings.main().disableDetection
     for _, actor in ipairs(nearby.actors) do
         -- check for detection
         if (actor.id ~= self.id) and types.NPC.objectIsInstance(actor) and (types.Actor.isDead(actor) ~= true) and
             (types.Actor.isDeathFinished(actor) ~= true) then
             local distance = (self.position - actor.position):length()
             if distance <= 400 then
-                local sneakResult = cachedCheck(actor.id, function() return sneakCheck(actor, distance) end)
-                if (isTalking(actor) or (distance <= 100)) and (sneakResult ~= true) then
+                -- patch from Mummelpuffin
+                local sneaking = detectionDisabled and self.controls.sneak or
+                    cachedCheck(actor.id, function() return sneakCheck(actor, distance) end)
+
+                if (isTalking(actor) or (distance <= 100)) and (sneaking ~= true) then
                     -- do a raycast to check if we have line of sight
                     if LOS(self, actor) then
                         sendSpottedEvent(actor)
@@ -287,7 +290,7 @@ local function inventoryChangeCheck(dt)
             settings.debugPrint("Blocked cell")
             return
         else
-            core.sendGlobalEvent(settings.MOD_NAME .. "onNewItem", {
+            core.sendGlobalEvent(MOD_NAME .. "onNewItem", {
                 player = self,
                 cellID = itemCell,
                 itemsList = newItemsList
@@ -308,7 +311,7 @@ local function onInfrequentUpdate(dt)
 
         -- now process cell change
 
-        core.sendGlobalEvent(settings.MOD_NAME .. "onCellChange", {
+        core.sendGlobalEvent(MOD_NAME .. "onCellChange", {
             player = self,
             lastCellID = lastCellID,
             newCellID = self.cell.id
@@ -323,7 +326,7 @@ local function onInfrequentUpdate(dt)
         return
     end
 
-    if settings.disableDetection() ~= true then
+    if settings.main().disableDetection ~= true then
         detectionCheck(dt)
     end
 
@@ -333,7 +336,7 @@ local function onInfrequentUpdate(dt)
         -- we got caught!
         -- notify global that we got caught.
         -- this will immediately check for pending thefts
-        core.sendGlobalEvent(settings.MOD_NAME .. "onBountyIncreased", {
+        core.sendGlobalEvent(MOD_NAME .. "onBountyIncreased", {
             player = self,
             oldBounty = bounty,
             newBounty = newBounty
@@ -388,7 +391,7 @@ local function UiModeChanged(data)
         if (newBounty == 0) and (bounty ~= 0) then
             bounty = 0
             -- we paid off our bounty.
-            core.sendGlobalEvent(settings.MOD_NAME .. "onPaidBounty", {
+            core.sendGlobalEvent(MOD_NAME .. "onPaidBounty", {
                 player = self,
                 previousBounty = bounty
             })
@@ -408,8 +411,8 @@ end
 
 return {
     eventHandlers = {
-        [settings.MOD_NAME .. "setItemsAllowed"] = setItemsAllowed,
-        [settings.MOD_NAME .. "onNPCActivated"] = onNPCActivated,
+        [MOD_NAME .. "setItemsAllowed"] = setItemsAllowed,
+        [MOD_NAME .. "onNPCActivated"] = onNPCActivated,
         UiModeChanged = UiModeChanged
     },
     engineHandlers = {

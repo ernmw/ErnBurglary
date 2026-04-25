@@ -17,106 +17,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 local interfaces = require("openmw.interfaces")
 local storage = require("openmw.storage")
-local types = require("openmw.types")
+local MOD_NAME = require("scripts.ErnBurglary.ns")
 
-local MOD_NAME = "ErnBurglary"
-
-local SettingsGameplay = storage.globalSection("SettingsGameplay" .. MOD_NAME)
-local SettingsUI = storage.globalSection("SettingsUI" .. MOD_NAME)
-
-local function debugMode()
-    return SettingsUI:get("debugMode")
-end
-
-local function revertBounties()
-    return SettingsGameplay:get("revertBounties")
-end
-
-local function quietMode()
-    return SettingsUI:get("quietMode")
-end
-
-local function drain()
-    return SettingsUI:get("drain")
-end
-
-local function bountyScale()
-    return SettingsGameplay:get("bountyScale")
-end
-
-local function trespassFine()
-    return SettingsGameplay:get("trespassFine")
-end
-
-local function sneakXPScale()
-    return SettingsGameplay:get("sneakXPScale")
-end
-
-local function lenientFactions()
-    return SettingsGameplay:get("lenientFactions")
-end
-
-local function disableDetection()
-    return SettingsGameplay:get("disableDetection")
-end
-
-local function setDisableDetection(value)
-    if disableDetection() ~= value then
-        print("Setting 'disableDetection' to " .. tostring(value))
-        SettingsGameplay:set("disableDetection", value == true)
-    end
-end
+local mainGroupKey = "SettingsGameplay" .. MOD_NAME
+local uiGroupKey = "SettingsUI" .. MOD_NAME
 
 local iconOptions = { "sneaking", "never", "always" }
 
-local function icon()
-    return {
-        ["showIcon"] = SettingsUI:get("showIcon"),
-        ["iconOffsetX"] = SettingsUI:get("iconOffsetX"),
-        ["iconOffsetY"] = SettingsUI:get("iconOffsetY"),
-        ["iconSize"] = SettingsUI:get("iconSize")
-    }
-end
-
-local function debugPrint(str, ...)
-    if debugMode() then
-        local arg = { ... }
-        if arg ~= nil then
-            print(string.format("DEBUG: " .. str, unpack(arg)))
-        else
-            print("DEBUG: " .. str)
-        end
-    end
-end
-
-local function registerPage()
-    interfaces.Settings.registerPage {
-        key = MOD_NAME,
-        l10n = MOD_NAME,
-        name = "name",
-        description = "description"
-    }
-end
-
-local function onUISettingsChange(fn)
-    local async = require("openmw.async")
-    local ui = require('openmw.ui')
-
-    local group = storage.globalSection("SettingsUI" .. MOD_NAME)
-    group:subscribe(async:callback(function(_, key)
-        debugPrint("Reloading UI...")
-        fn()
-    end))
-end
-
-local function initSettings()
+local function initGlobal()
     interfaces.Settings.registerGroup {
-        key = "SettingsGameplay" .. MOD_NAME,
+        key = mainGroupKey,
         l10n = MOD_NAME,
         name = "modSettingsGameplayTitle",
         description = "modSettingsGameplayDesc",
         page = MOD_NAME,
-        permanentStorage = false,
+        permanentStorage = true,
         settings = { {
             key = "bountyScale",
             name = "bountyScale_name",
@@ -132,7 +47,7 @@ local function initSettings()
             key = "trespassFine",
             name = "trespassFine_name",
             description = "trespassFine_description",
-            default = 0,
+            default = 10,
             renderer = "number",
             argument = {
                 integer = true,
@@ -168,16 +83,30 @@ local function initSettings()
             description = "disableDetection_description",
             default = false,
             renderer = "checkbox"
+        }, {
+            key = "debugMode",
+            name = "debugMode_name",
+            description = "debugMode_description",
+            default = false,
+            renderer = "checkbox"
         } }
     }
+end
 
+local function initPlayer()
+    interfaces.Settings.registerPage {
+        key = MOD_NAME,
+        l10n = MOD_NAME,
+        name = "name",
+        description = "description"
+    }
     interfaces.Settings.registerGroup {
-        key = "SettingsUI" .. MOD_NAME,
+        key = uiGroupKey,
         l10n = MOD_NAME,
         name = "modSettingsUITitle",
         description = "modSettingsUIDesc",
         page = MOD_NAME,
-        permanentStorage = false,
+        permanentStorage = true,
         settings = { {
             key = "drain",
             name = "drain_name",
@@ -191,6 +120,12 @@ local function initSettings()
             default = true,
             renderer = "checkbox"
         }, {
+            key = "lockIcon",
+            name = "lockIcon_name",
+            description = "lockIcon_description",
+            default = true,
+            renderer = "checkbox"
+        }, {
             key = "showIcon",
             name = "showIcon_name",
             description = "showIcon_description",
@@ -198,24 +133,24 @@ local function initSettings()
             default = iconOptions[1],
             renderer = "select",
         }, {
-            key = "iconOffsetX",
-            name = "iconOffsetX_name",
-            default = 0,
+            key = "iconX",
+            name = "iconX_name",
+            default = 0.1314,
             renderer = "number",
             argument = {
-                integer = true,
-                min = -50000,
-                max = 50000
+                integer = false,
+                min = 0,
+                max = 1
             }
         }, {
-            key = "iconOffsetY",
-            name = "iconOffsetY_name",
-            default = 0,
+            key = "iconY",
+            name = "iconY_name",
+            default = 0.9624,
             renderer = "number",
             argument = {
-                integer = true,
-                min = -50000,
-                max = 50000
+                integer = false,
+                min = 0,
+                max = 1
             }
         }, {
             key = "iconSize",
@@ -227,41 +162,82 @@ local function initSettings()
                 min = 8,
                 max = 256
             }
-        }, {
-            key = "debugMode",
-            name = "debugMode_name",
-            description = "debugMode_description",
-            default = false,
-            renderer = "checkbox"
         } }
     }
-
-    print("init settings")
 end
 
-local function onNewGame()
-    SettingsGameplay:set("trespassFine", 10)
+local lookupFuncTable = {
+    __index = function(table, key)
+        if key == "subscribe" then
+            return function(callback)
+                print("Subscribed to " .. tostring(table.groupKey) .. ".")
+                return table.section.subscribe(table.section, callback)
+            end
+        elseif key == "section" then
+            return table.section
+        elseif key == "groupKey" then
+            return table.groupKey
+        end
+        -- fall through to settings section
+        local val = table.section:get(key)
+        if val ~= nil then
+            return val
+        else
+            error("unknown setting " .. tostring(key))
+        end
+    end,
+}
+
+local mainContainer = nil
+
+local function mainContainerCtor()
+    if mainContainer then
+        return mainContainer
+    end
+    mainContainer = {
+        groupKey = mainGroupKey,
+        section = storage.globalSection(mainGroupKey)
+    }
+    setmetatable(mainContainer, lookupFuncTable)
+    return mainContainer
 end
 
+local uiContainer = nil
+local function uiContainerCtor()
+    if uiContainer then
+        return uiContainer
+    end
+    uiContainer = {
+        groupKey = uiGroupKey,
+        section = storage.playerSection(uiGroupKey)
+    }
+    setmetatable(uiContainer, lookupFuncTable)
+    return uiContainer
+end
+
+local function debugPrint(str, ...)
+    if mainContainerCtor().debugMode then
+        local arg = { ... }
+        if arg ~= nil then
+            print(string.format("DEBUG: " .. str, unpack(arg)))
+        else
+            print("DEBUG: " .. str)
+        end
+    end
+end
+
+---@alias SettingContainer table
+
+---@class Settings
+---@field initGlobal fun()
+---@field main fun(): SettingContainer
+---@field ui fun(): SettingContainer
+
+---@type Settings
 return {
-    initSettings = initSettings,
-    MOD_NAME = MOD_NAME,
-
-    registerPage = registerPage,
-    onUISettingsChange = onUISettingsChange,
-    onNewGame = onNewGame,
-
-    revertBounties = revertBounties,
-    bountyScale = bountyScale,
-    trespassFine = trespassFine,
-    sneakXPScale = sneakXPScale,
-    lenientFactions = lenientFactions,
-    disableDetection = disableDetection,
-    setDisableDetection = setDisableDetection,
-
-    quietMode = quietMode,
-    drain = drain,
-    icon = icon,
-    debugMode = debugMode,
-    debugPrint = debugPrint
+    initGlobal = initGlobal,
+    initPlayer = initPlayer,
+    main = mainContainerCtor,
+    ui = uiContainerCtor,
+    debugPrint = debugPrint,
 }

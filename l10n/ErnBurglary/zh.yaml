@@ -37,8 +37,8 @@ sneaking: "潜行中"
 never: "从不 "
 always: "总是 "
 
-iconOffsetY_name: "图标垂直偏移"
-iconOffsetX_name: "图标水平偏移"
+iconY_name: "图标垂直偏移"
+iconX_name: "图标水平偏移"
 iconSize_name: "图标大小"
 
 debugMode_name: "调试模式"

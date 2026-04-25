@@ -15,6 +15,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
+local MOD_NAME = require("scripts.ErnBurglary.ns")
 local settings = require("scripts.ErnBurglary.settings")
 local common = require("scripts.ErnBurglary.common")
 local infrequent = require("scripts.ErnBurglary.infrequent")
@@ -30,12 +31,7 @@ if require("openmw.core").API_REVISION < 62 then
     error("OpenMW 0.49 or newer is required!")
 end
 
--- Init settings first to init storage which is used everywhere.
-settings.initSettings()
-
-local function onNewGame()
-    settings.onNewGame()
-end
+settings.initGlobal()
 
 local persistedState = {}
 
@@ -229,7 +225,7 @@ local function onActivate(object, actor)
         end
     elseif types.NPC.objectIsInstance(object) then
         settings.debugPrint("activated " .. object.recordId)
-        actor:sendEvent(settings.MOD_NAME .. "onNPCActivated", {
+        actor:sendEvent(MOD_NAME .. "onNPCActivated", {
             npc = object
         })
     end
@@ -244,13 +240,17 @@ end
 -- npc
 -- override
 local function onSpotted(data)
-    settings.debugPrint("onSpotted(" .. aux_util.deepToString(data) .. ")")
     local cellState = getCellState(data.cellID, data.player.id)
+
+    if not cellState.spottedByActorId[data.npc.id] then
+        settings.debugPrint("onSpotted(" .. aux_util.deepToString(data) .. ")")
+    end
+
     cellState.spottedByActorId[data.npc.id] = true
     saveCellState(cellState)
     interfaces.ErnBurglary.__onSpotted(data.player, data.npc, data.cellID)
     if data.override then
-        settings.setDisableDetection(true)
+        settings.main().section:set("disableDetection", true)
     end
 end
 
@@ -345,7 +345,7 @@ local function increaseBounty(player, amount)
 end
 
 local function revertBounty(player, cellState)
-    if settings.revertBounties() ~= true then
+    if settings.main().revertBounties ~= true then
         return
     end
 
@@ -364,7 +364,7 @@ end
 -- returns bounty to apply
 local function handleTheftSeenByGuard(player, value)
     settings.debugPrint("handleTheftSeenByGuard(player, " .. value .. ")")
-    local bounty = value * settings.bountyScale()
+    local bounty = value * settings.main().bountyScale
     print("Theft seen by guard increased bounty by " .. bounty .. ".")
     return bounty
 end
@@ -378,7 +378,7 @@ local function handleTheftFromNPC(player, npc, value)
     local dispoPenalty = math.min(startDisposition, value)
     types.NPC.modifyBaseDisposition(npc, player, -1 * dispoPenalty)
 
-    local bounty = (value - dispoPenalty) * settings.bountyScale()
+    local bounty = (value - dispoPenalty) * settings.main().bountyScale
 
     print("Theft from " .. npc.recordId .. " dropped disposition by " .. dispoPenalty .. " from " .. startDisposition ..
         ", and increased bounty by " .. bounty .. ".")
@@ -389,9 +389,9 @@ end
 local function handleTheftFromFaction(player, faction, value)
     settings.debugPrint("handleTheftFromFaction(player, " .. faction .. ", " .. value .. ")")
 
-    if settings.lenientFactions() then
+    if settings.main().lenientFactions then
         print("Theft from " .. faction .. " (lenient).")
-        return value * settings.bountyScale()
+        return value * settings.main().bountyScale
     end
 
     local startReputation = types.NPC.getFactionReputation(player, faction)
@@ -401,14 +401,14 @@ local function handleTheftFromFaction(player, faction, value)
     local reputationPenalty = math.min(startReputation, value)
     types.NPC.modifyFactionReputation(player, faction, -1 * reputationPenalty)
 
-    local bounty = (value - reputationPenalty) * settings.bountyScale()
+    local bounty = (value - reputationPenalty) * settings.main().bountyScale
 
     local expelled = false
     if bounty > 0 then
         for _, playerFaction in ipairs(types.NPC.getFactions(player)) do
             if playerFaction == faction then
                 types.NPC.expel(player, playerFaction)
-                player:sendEvent(settings.MOD_NAME .. "showExpelledMessage", {
+                player:sendEvent(MOD_NAME .. "showExpelledMessage", {
                     faction = faction
                 })
                 expelled = true
@@ -634,7 +634,7 @@ local function resolvePendingTheft(data)
         increaseBounty(data.player, totalBounty)
     elseif totalTheftValue > 0 then
         -- tell player they were caught (when bounty did not increase).
-        data.player:sendEvent(settings.MOD_NAME .. "showWantedMessage", {
+        data.player:sendEvent(MOD_NAME .. "showWantedMessage", {
             value = totalTheftValue
         })
     end
@@ -827,7 +827,7 @@ local function onPaidBounty(data)
     saveCellState(cellState)
 end
 
-local resendSpottedStatusCallback = async:registerTimerCallback(settings.MOD_NAME .. "_resendSpottedStatusCallback",
+local resendSpottedStatusCallback = async:registerTimerCallback(MOD_NAME .. "_resendSpottedStatusCallback",
     function(data)
         for _, player in ipairs(world.players) do
             local cellState = getCellState(player.cell.id, player.id)
@@ -862,11 +862,11 @@ end
 
 return {
     eventHandlers = {
-        [settings.MOD_NAME .. "onSpotted"] = onSpotted,
-        [settings.MOD_NAME .. "onCellChange"] = onCellChange,
-        [settings.MOD_NAME .. "onNewItem"] = onNewItems,
-        [settings.MOD_NAME .. "onPaidBounty"] = onPaidBounty,
-        [settings.MOD_NAME .. "onBountyIncreased"] = onBountyIncreased
+        [MOD_NAME .. "onSpotted"] = onSpotted,
+        [MOD_NAME .. "onCellChange"] = onCellChange,
+        [MOD_NAME .. "onNewItem"] = onNewItems,
+        [MOD_NAME .. "onPaidBounty"] = onPaidBounty,
+        [MOD_NAME .. "onBountyIncreased"] = onBountyIncreased
     },
     engineHandlers = {
         onSave = saveState,

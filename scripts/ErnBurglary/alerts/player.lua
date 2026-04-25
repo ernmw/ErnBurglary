@@ -20,13 +20,11 @@ local types = require("openmw.types")
 local settings = require("scripts.ErnBurglary.settings")
 local self = require("openmw.self")
 local core = require("openmw.core")
-local infrequent = require("scripts.ErnBurglary.infrequent")
-local localization = core.l10n(settings.MOD_NAME)
+local MOD_NAME = require("scripts.ErnBurglary.ns")
+local localization = core.l10n(MOD_NAME)
 local async = require("openmw.async")
 local ui = require('openmw.ui')
 local util = require('openmw.util')
-local aux_util = require('openmw_aux.util')
-local aux_ui = require('openmw_aux.ui')
 
 -- pendingMessage exists so we don't spam a bunch of messages in a row.
 -- instead, only show the latest one.
@@ -43,62 +41,141 @@ end
 local sneaking = false
 local spotted = false
 
-local spottedIcon = nil
+local function isVisible()
+    local newVisible = (spotted and interfaces.UI.isHudVisible()) and
+        ((settings.ui().showIcon == "always") or (self.controls.sneak and settings.ui().showIcon ~= "never"))
 
-local function makeIcon(path)
-    local iconSettings = settings.icon()
-    settings.debugPrint("icon settings: " .. aux_util.deepToString(iconSettings, 3))
-    local size = iconSettings["iconSize"]
+    if not settings.ui().lockIcon then
+        newVisible = true
+    end
+    return newVisible
+end
+
+local function position()
+    return util.vector2(settings.ui().iconX, settings.ui().iconY)
+end
+
+local function layer()
+    return settings.ui().lockIcon and 'Scene' or 'Modal'
+end
+
+local function size()
+    return util.vector2(settings.ui().iconSize, settings.ui().iconSize)
+end
+
+local function makeIconLayout()
     -- (0,0) is top left of screen.
-
     -- default anchor is top-left. 1,0 is top right.
-    local box = ui.create {
+    return {
         name = 'spotted',
-        layer = 'HUD',
+        layer = layer(),
         type = ui.TYPE.Container,
         template = interfaces.MWUI.templates.boxSolid,
         props = {
-            position = util.vector2(iconSettings["iconOffsetX"] + 202, iconSettings["iconOffsetY"] - 18),
-            relativePosition = util.vector2(0, 1),
-            anchor = util.vector2(0, 1),
-            visible = false
+            --position = util.vector2(settings.ui.iconX + 202, settings.ui.iconY - 18),
+            --relativePosition = util.vector2(0.3, 0.9),
+            relativePosition = position(),
+            anchor = util.vector2(0.5, 0.5),
+            visible = isVisible()
         },
         content = ui.content { {
+            name = "image",
             type = ui.TYPE.Image,
             props = {
                 resource = ui.texture {
-                    path = path
+                    path = "icons\\ernburglary\\b_tx_spotted.dds"
                 },
-                size = util.vector2(size, size)
+                size = size()
             },
-            size = util.vector2(size, size)
+            size = size()
         } }
     }
-    return box
 end
 
-local function drawSpottedIcon()
-    if spottedIcon == nil then
-        local iconPath = "icons\\ernburglary\\b_tx_spotted.dds"
-        settings.debugPrint("iconpath: " .. iconPath)
-        spottedIcon = makeIcon(iconPath)
-    end
-    local newVisible = (spotted and interfaces.UI.isHudVisible()) and
-        ((settings.icon()["showIcon"] == "always") or (self.controls.sneak and settings.icon()["showIcon"] ~= "never"))
+local spottedIcon = ui.create(makeIconLayout())
 
-    spottedIcon.layout.props.visible = newVisible
+if not spottedIcon then
+    error("failed to make spotted icon")
+    return
+end
+
+local iconEvents = nil
+
+local timeAccumulator = 0
+local function updateSpottedIcon()
+    if settings.ui().lockIcon then
+        spottedIcon.layout.content["image"].props.color = nil
+    else
+        timeAccumulator = timeAccumulator + 10 * core.getRealFrameDuration()
+        if timeAccumulator > 1000 then
+            timeAccumulator = timeAccumulator - 1000
+        end
+        local notRed = math.sin(timeAccumulator) / 2
+        spottedIcon.layout.content["image"].props.color = util.color.rgb(1, notRed, notRed)
+    end
+    spottedIcon.layout.props.relativePosition = position()
+    spottedIcon.layout.props.visible = isVisible()
+    spottedIcon.layout.props.size = size()
+
+    spottedIcon.layout.layer = layer()
     spottedIcon:update()
 end
 
-local function resetIcon()
-    if spottedIcon then
-        spottedIcon:destroy()
-        spottedIcon = nil
-    end
-    drawSpottedIcon()
+local function round(num)
+    return math.floor(num * 10000 + 0.5) / 10000
 end
 
-settings.onUISettingsChange(resetIcon)
+local screenSize = ui.screenSize()
+iconEvents = {
+    mousePress = async:callback(function(data, elem)
+        if data.button == 1 then -- Left mouse button
+            if settings.ui().lockIcon then
+                return
+            end
+            settings.debugPrint("left click start spotted icon")
+            if not elem.userData then
+                elem.userData = {}
+            end
+            elem.userData.isDragging = true
+            elem.userData.dragStartPosition = data.position
+            elem.userData.windowStartPosition = spottedIcon.layout.props.relativePosition or util.vector2(0, 0)
+        end
+        spottedIcon:update()
+    end),
+
+    mouseRelease = async:callback(function(data, elem)
+        settings.debugPrint("left click spotted icon")
+        if elem.userData then
+            elem.userData.isDragging = false
+            --settings.ui().section:set("iconX", elem.userData.newPosition.x)
+            --settings.ui().section:set("iconY", elem.userData.newPosition.y)
+            --drawSpottedIcon()
+        end
+    end),
+
+    mouseMove = async:callback(function(data, elem)
+        if elem.userData and elem.userData.isDragging then
+            -- Calculate new position based on mouse movement
+            local deltaX = data.position.x - elem.userData.dragStartPosition.x
+            local deltaY = data.position.y - elem.userData.dragStartPosition.y
+            local newPosition = util.vector2(
+                elem.userData.windowStartPosition.x + deltaX / screenSize.x,
+                elem.userData.windowStartPosition.y + deltaY / screenSize.y
+            )
+            --elem.userData.newPosition = newPosition
+            settings.ui().section:set("iconX", round(newPosition.x))
+            settings.ui().section:set("iconY", round(newPosition.y))
+            settings.debugPrint("x: " .. tostring(newPosition.x) .. ", y: " .. tostring(newPosition.y))
+            --spottedIcon.layout.props.relativePosition = newPosition
+            --spottedIcon:update()
+        end
+    end),
+}
+spottedIcon.layout.events = iconEvents
+
+settings.ui().subscribe(async:callback(function(_, key)
+    updateSpottedIcon()
+end))
 
 local function onSneakChange(sneakStatus)
     local changed = false
@@ -106,11 +183,11 @@ local function onSneakChange(sneakStatus)
         changed = true
     end
     sneaking = sneakStatus
-    if (settings.quietMode() ~= true) and changed and sneaking and spotted then
+    if (settings.ui().quietMode ~= true) and changed and sneaking and spotted then
         queueMessage(localization("showWarningMessage", {}))
     end
     if changed then
-        drawSpottedIcon()
+        updateSpottedIcon()
     end
 end
 
@@ -125,12 +202,12 @@ local function alertsOnSpottedChange(data)
 
         -- this will execute on every cell change
         settings.debugPrint("showNoWitnessesMessage")
-        if (settings.quietMode() ~= true) and sneaking then
+        if (settings.ui().quietMode ~= true) and sneaking then
             queueMessage(localization("showNoWitnessesMessage", {}))
         end
     else
         spotted = true
-        if (settings.drain()) then
+        if settings.ui().drain then
             types.Actor.activeSpells(self):add({
                 id = "ernburglary_spotted",
                 effects = { 0 },
@@ -143,7 +220,7 @@ local function alertsOnSpottedChange(data)
         -- npc might not be real npc object.
         if (type(data.npc) ~= "table") and types.NPC.objectIsInstance(data.npc) then
             local npcRecord = types.NPC.record(data.npc)
-            if (settings.quietMode() ~= true) and sneaking then
+            if (settings.ui().quietMode ~= true) and sneaking then
                 queueMessage(localization("showSpottedMessage", {
                     actorName = npcRecord.name
                 }))
@@ -170,7 +247,7 @@ end
 local function update(dt)
     onSneakChange(self.controls.sneak)
 
-    drawSpottedIcon()
+    updateSpottedIcon()
 
     if pendingMessage == nil then
         return
@@ -199,9 +276,9 @@ end
 
 return {
     eventHandlers = {
-        [settings.MOD_NAME .. "alertsOnSpottedChange"] = alertsOnSpottedChange,
-        [settings.MOD_NAME .. "showWantedMessage"] = showWantedMessage,
-        [settings.MOD_NAME .. "showExpelledMessage"] = showExpelledMessage,
+        [MOD_NAME .. "alertsOnSpottedChange"] = alertsOnSpottedChange,
+        [MOD_NAME .. "showWantedMessage"] = showWantedMessage,
+        [MOD_NAME .. "showExpelledMessage"] = showExpelledMessage,
     },
     engineHandlers = {
         onFrame = onFrame,

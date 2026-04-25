@@ -15,6 +15,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
+local MOD_NAME   = require("scripts.ErnBurglary.ns")
 local settings   = require("scripts.ErnBurglary.settings")
 local interfaces = require("openmw.interfaces")
 local core       = require("openmw.core")
@@ -28,7 +29,7 @@ local function xpOnStolenCallback(data)
         sneakTerm = 10
         maxVal = 1
     end
-    local scaled = math.min(maxVal, settings.sneakXPScale() * (math.log(data / sneakTerm)))
+    local scaled = math.min(maxVal, settings.main().sneakXPScale * (math.log(data / sneakTerm)))
 
     if scaled > 0 then
         interfaces.SkillProgression.skillUsed(core.stats.Skill.records.sneak.id,
@@ -43,6 +44,6 @@ end
 
 return {
     eventHandlers = {
-        [settings.MOD_NAME .. "xpOnStolenCallback"] = xpOnStolenCallback,
+        [MOD_NAME .. "xpOnStolenCallback"] = xpOnStolenCallback,
     }
 }

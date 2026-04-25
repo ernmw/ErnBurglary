@@ -1,6 +1,6 @@
 --[[
 ErnBurglary for OpenMW.
-Copyright (C) 2025 Erin Pentecost
+Copyright (C) 2026 Erin Pentecost
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -16,21 +16,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
 local settings = require("scripts.ErnBurglary.settings")
-local pself    = require("openmw.self")
-local MOD_NAME = require("scripts.ErnBurglary.ns")
-local types    = require("openmw.types")
-local core     = require("openmw.core")
 
-local function onActive()
-    if types.Lockable.isLocked(pself) then
-        core.sendGlobalEvent(MOD_NAME .. "onDoorLocked", {
-            door = pself
-        })
-    end
-end
-
-return {
-    engineHandlers = {
-        onActive = onActive
-    }
-}
+-- This is run early and is attached to MENU.
+settings.initPlayer()

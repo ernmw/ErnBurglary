@@ -15,6 +15,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]
+local MOD_NAME = require("scripts.ErnBurglary.ns")
 local settings = require("scripts.ErnBurglary.settings")
 local interfaces = require('openmw.interfaces')
 local types = require("openmw.types")
@@ -73,7 +74,7 @@ local function setIsTrespassing(actor, destCell)
     -- we are trespassing!
     settings.debugPrint("Player " .. actor.id .. " is trespassing in " .. destCell.name .. " (" .. destCell.id .. ").")
     persistedState[actor.id] = destCell.id
-    actor:sendEvent(settings.MOD_NAME .. "showTrespassingMessage", {})
+    actor:sendEvent(MOD_NAME .. "showTrespassingMessage", {})
 end
 
 local function cellHasOwnedItems(cell)
@@ -186,7 +187,7 @@ local function onSpottedChange(data)
     end
     settings.debugPrint("Player was spotted trespassing in " .. trespassCellID .. ".")
 
-    local fine = settings.trespassFine()
+    local fine = settings.main().trespassFine
     if fine > 0 then
         local currentCrime = types.Player.getCrimeLevel(data.player)
         types.Player.setCrimeLevel(data.player, currentCrime + fine)
@@ -224,8 +225,8 @@ end
 
 return {
     eventHandlers = {
-        [settings.MOD_NAME .. "onNoTrespass"] = onNoTrespass,
-        [settings.MOD_NAME .. "onDoorLocked"] = onDoorLocked,
+        [MOD_NAME .. "onNoTrespass"] = onNoTrespass,
+        [MOD_NAME .. "onDoorLocked"] = onDoorLocked,
     },
     engineHandlers = {
         onSave = saveState,

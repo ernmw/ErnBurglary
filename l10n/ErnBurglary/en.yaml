@@ -13,6 +13,9 @@ modSettingsUIDesc: "Change how user interface features work."
 revertBounties_name: "Revert Bounty If No Witnesses"
 revertBounties_description: "This is a from-scratch re-implementation of the excellent 'No Witness No Bounty' mod. If all witnesses are dead before you leave the area, then your bounty will be reverted."
 
+lockIcon_name: "Lock Icon Position"
+lockIcon_description: "If unlocked, you can drag the spotted icon around with your mouse to place it. While unlocked, the icon will always be visible."
+
 quietMode_name: "Fewer Notifications"
 quietMode_description: "Turn this on to only be alerted when your theft was noticed."
 
@@ -40,8 +43,8 @@ sneaking: "sneaking"
 never: "never   "
 always: "always  "
 
-iconOffsetY_name: "Icon Vertical Offset"
-iconOffsetX_name: "Icon Horizontal Offset"
+iconY_name: "Icon Vertical Offset"
+iconX_name: "Icon Horizontal Offset"
 iconSize_name: "Icon Image Size"
 
 debugMode_name: "Debug Mode"
