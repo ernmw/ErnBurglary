@@ -20,14 +20,11 @@ local types = require("openmw.types")
 local settings = require("scripts.ErnBurglary.settings")
 local self = require("openmw.self")
 local core = require("openmw.core")
-local infrequent = require("scripts.ErnBurglary.infrequent")
 local MOD_NAME = require("scripts.ErnBurglary.ns")
 local localization = core.l10n(MOD_NAME)
 local async = require("openmw.async")
 local ui = require('openmw.ui')
 local util = require('openmw.util')
-local aux_util = require('openmw_aux.util')
-local aux_ui = require('openmw_aux.ui')
 
 -- pendingMessage exists so we don't spam a bunch of messages in a row.
 -- instead, only show the latest one.

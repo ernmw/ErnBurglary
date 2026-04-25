@@ -211,14 +211,18 @@ end
 
 local function detectionCheck(dt)
     -- find out which NPC is talking
+    local detectionDisabled = settings.main().disableDetection
     for _, actor in ipairs(nearby.actors) do
         -- check for detection
         if (actor.id ~= self.id) and types.NPC.objectIsInstance(actor) and (types.Actor.isDead(actor) ~= true) and
             (types.Actor.isDeathFinished(actor) ~= true) then
             local distance = (self.position - actor.position):length()
             if distance <= 400 then
-                local sneakResult = cachedCheck(actor.id, function() return sneakCheck(actor, distance) end)
-                if (isTalking(actor) or (distance <= 100)) and (sneakResult ~= true) then
+                -- patch from Mummelpuffin
+                local sneaking = detectionDisabled and self.controls.sneak or
+                    cachedCheck(actor.id, function() return sneakCheck(actor, distance) end)
+
+                if (isTalking(actor) or (distance <= 100)) and (sneaking ~= true) then
                     -- do a raycast to check if we have line of sight
                     if LOS(self, actor) then
                         sendSpottedEvent(actor)
