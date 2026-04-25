@@ -14,7 +14,7 @@ revertBounties_name: "Revert Bounty If No Witnesses"
 revertBounties_description: "This is a from-scratch re-implementation of the excellent 'No Witness No Bounty' mod. If all witnesses are dead before you leave the area, then your bounty will be reverted."
 
 lockIcon_name: "Lock Icon Position"
-lockIcon_description: "Requires reload to take effect. If unlocked, you can drag the spotted icon around with your mouse to place it. If unlocked, the icon will always be visible."
+lockIcon_description: "If unlocked, you can drag the spotted icon around with your mouse to place it. While unlocked, the icon will always be visible."
 
 quietMode_name: "Fewer Notifications"
 quietMode_description: "Turn this on to only be alerted when your theft was noticed."

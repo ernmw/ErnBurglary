@@ -135,7 +135,7 @@ local function initPlayer()
         }, {
             key = "iconX",
             name = "iconX_name",
-            default = 0.223,
+            default = 0.1314,
             renderer = "number",
             argument = {
                 integer = false,
@@ -145,7 +145,7 @@ local function initPlayer()
         }, {
             key = "iconY",
             name = "iconY_name",
-            default = 0.954,
+            default = 0.9624,
             renderer = "number",
             argument = {
                 integer = false,

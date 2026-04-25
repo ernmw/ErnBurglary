@@ -79,6 +79,7 @@ local function makeIconLayout()
             visible = isVisible()
         },
         content = ui.content { {
+            name = "image",
             type = ui.TYPE.Image,
             props = {
                 resource = ui.texture {
@@ -100,12 +101,28 @@ end
 
 local iconEvents = nil
 
+local timeAccumulator = 0
 local function updateSpottedIcon()
+    if settings.ui().lockIcon then
+        spottedIcon.layout.content["image"].props.color = nil
+    else
+        timeAccumulator = timeAccumulator + 10 * core.getRealFrameDuration()
+        if timeAccumulator > 1000 then
+            timeAccumulator = timeAccumulator - 1000
+        end
+        local notRed = math.sin(timeAccumulator) / 2
+        spottedIcon.layout.content["image"].props.color = util.color.rgb(1, notRed, notRed)
+    end
     spottedIcon.layout.props.relativePosition = position()
     spottedIcon.layout.props.visible = isVisible()
     spottedIcon.layout.props.size = size()
+
     spottedIcon.layout.layer = layer()
     spottedIcon:update()
+end
+
+local function round(num)
+    return math.floor(num * 10000 + 0.5) / 10000
 end
 
 local screenSize = ui.screenSize()
@@ -146,8 +163,8 @@ iconEvents = {
                 elem.userData.windowStartPosition.y + deltaY / screenSize.y
             )
             --elem.userData.newPosition = newPosition
-            settings.ui().section:set("iconX", newPosition.x)
-            settings.ui().section:set("iconY", newPosition.y)
+            settings.ui().section:set("iconX", round(newPosition.x))
+            settings.ui().section:set("iconY", round(newPosition.y))
             settings.debugPrint("x: " .. tostring(newPosition.x) .. ", y: " .. tostring(newPosition.y))
             --spottedIcon.layout.props.relativePosition = newPosition
             --spottedIcon:update()
