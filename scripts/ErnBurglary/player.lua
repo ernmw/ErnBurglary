@@ -218,11 +218,8 @@ local function detectionCheck(dt)
             (types.Actor.isDeathFinished(actor) ~= true) then
             local distance = (self.position - actor.position):length()
             if distance <= 400 then
-                -- patch from Mummelpuffin
-                local sneaking = detectionDisabled and self.controls.sneak or
-                    cachedCheck(actor.id, function() return sneakCheck(actor, distance) end)
-
-                if (isTalking(actor) or (distance <= 100)) and (sneaking ~= true) then
+                local sneakResult = cachedCheck(actor.id, function() return sneakCheck(actor, distance) end)
+                if (isTalking(actor) or (distance <= 100)) and (sneakResult ~= true) then
                     -- do a raycast to check if we have line of sight
                     if LOS(self, actor) then
                         sendSpottedEvent(actor)
