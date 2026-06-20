@@ -23,9 +23,11 @@ local core     = require("openmw.core")
 
 local function onActive()
     if types.Lockable.isLocked(pself) then
-        core.sendGlobalEvent(MOD_NAME .. "onDoorLocked", {
-            door = pself
-        })
+        if settings.main().trespassFine > 0 then
+            core.sendGlobalEvent(MOD_NAME .. "onDoorLocked", {
+                door = pself
+            })
+        end
     end
 end
 

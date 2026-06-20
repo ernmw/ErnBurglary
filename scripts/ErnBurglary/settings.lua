@@ -47,7 +47,7 @@ local function initGlobal()
             key = "trespassFine",
             name = "trespassFine_name",
             description = "trespassFine_description",
-            default = 10,
+            default = 0,
             renderer = "number",
             argument = {
                 integer = true,
@@ -58,7 +58,7 @@ local function initGlobal()
             key = "sneakXPScale",
             name = "sneakXPScale_name",
             description = "sneakXPScale_description",
-            default = 0.1,
+            default = 0,
             renderer = "number",
             argument = {
                 integer = false,
